@@ -1473,6 +1473,9 @@ int htp_connp_res_data(htp_connp_t *connp, const htp_time_t *timestamp, const vo
             //     return HTP_STREAM_CLOSED;
             // }
 
+            #ifdef HTP_DEBUG
+            fprintf(stderr, "htp_connp_res_data: GAP found in response, setting response state to IGNORE.");
+            #endif
             connp->out_state = htp_connp_RES_IGNORE;
             rc = connp->out_state(connp);
         } else {

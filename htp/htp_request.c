@@ -1156,11 +1156,20 @@ int htp_connp_req_data(htp_connp_t *connp, const htp_time_t *timestamp, const vo
             //     htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "Gaps are not allowed during this state");
             //     return HTP_STREAM_CLOSED;
             // }
-            htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "Gap found in request. Changing req and res state to IGNORE");
-            
-            connp->in_state = htp_connp_REQ_IGNORE;
-            connp->out_state = htp_connp_RES_IGNORE;
-            rc = connp->in_state(connp);
+
+            if (connp->in_state == htp_connp_REQ_BODY_IDENTITY ||
+                connp->in_state == htp_connp_REQ_IGNORE_DATA_AFTER_HTTP_0_9) {
+                rc = connp->in_state(connp);
+            } else if (connp->in_state == htp_connp_REQ_FINALIZE) {
+                //simple version without probing
+                rc = htp_tx_state_request_complete(connp->in_tx);
+            } else {
+                htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "Gap found in request. Changing req and res state to IGNORE");
+                
+                connp->in_state = htp_connp_REQ_IGNORE;
+                connp->out_state = htp_connp_RES_IGNORE;
+                rc = connp->in_state(connp);
+            }
         } else {
             rc = connp->in_state(connp);
         }

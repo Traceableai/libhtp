@@ -1349,6 +1349,8 @@ int htp_connp_res_data(htp_connp_t *connp, const htp_time_t *timestamp, const vo
             }
             // if out_state is idle..it means ..it is already in complete state and out_tx is null.. force it
             connp->out_tx = NULL;
+            // Destroy corresponding request
+            htp_tx_destroy_incomplete(connp->in_tx);
             return HTP_STREAM_CLOSED;
         } else {
             rc = connp->out_state(connp);

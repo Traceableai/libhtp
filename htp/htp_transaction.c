@@ -96,6 +96,7 @@ htp_tx_t *htp_tx_create(htp_connp_t *connp) {
     tx->response_status_number = HTP_STATUS_UNKNOWN;
     tx->response_protocol_number = HTP_PROTOCOL_UNKNOWN;
     tx->response_content_length = -1;
+    tx->force_complete = 0;
 
     tx->response_headers = htp_table_create(32);
     if (tx->response_headers == NULL) {

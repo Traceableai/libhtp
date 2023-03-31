@@ -1327,13 +1327,9 @@ htp_status_t htp_connp_RES_IDLE(htp_connp_t *connp) {
     // Find the next outgoing transaction
     // If there is none, we just create one so that responses without
     // request can still be processed.
-    connp->out_tx = htp_list_get(connp->conn->transactions, connp->out_next_tx_index);
+    // connp->out_tx = htp_list_get(connp->conn->transactions, connp->out_next_tx_index);
     if (connp->out_tx == NULL) {
         htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "Unable to match response to request");
-        // finalize dangling request waiting for next request or body
-        if (connp->in_state == htp_connp_REQ_FINALIZE) {
-            htp_tx_state_request_complete(connp->in_tx);
-        }
         connp->out_tx = htp_connp_tx_create(connp);
         if (connp->out_tx == NULL) {
             return HTP_ERROR;
@@ -1350,17 +1346,10 @@ htp_status_t htp_connp_RES_IDLE(htp_connp_t *connp) {
         if (connp->out_tx->request_uri == NULL) {
             return HTP_ERROR;
         }
-
-        connp->in_state = htp_connp_REQ_FINALIZE;
 #ifdef HTP_DEBUG
         fprintf(stderr, "picked up response w/o request");
 #endif
-        // We've used one transaction
-        connp->out_next_tx_index++;
     } else {
-        // We've used one transaction
-        connp->out_next_tx_index++;
-
         // TODO Detect state mismatch
 
         connp->out_content_length = -1;
@@ -1404,6 +1393,20 @@ int htp_connp_res_data(htp_connp_t *connp, const htp_time_t *timestamp, const vo
         htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "Missing outbound transaction data");
 
         return HTP_STREAM_ERROR;
+    }
+
+    if (connp->in_state != htp_connp_REQ_IDLE && connp->out_state == htp_connp_RES_IDLE) {
+        // complete the request state
+        // we should not match this response to request
+        // mark this request transaction force complete
+        if (connp->in_tx != NULL) {
+            connp->in_tx->force_complete = 1;
+        }
+        //complete the request state
+        htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "request incomplete, finish transaction. choose ");
+        htp_tx_state_request_complete(connp->in_tx);
+        // do not match this response with incomplete requests
+        connp->out_tx = NULL;
     }
 
     // If the length of the supplied data chunk is zero, proceed
@@ -1479,9 +1482,20 @@ int htp_connp_res_data(htp_connp_t *connp, const htp_time_t *timestamp, const vo
             } else if (connp->out_state == htp_connp_RES_FINALIZE) {
                 rc = htp_tx_state_response_complete_ex(connp->out_tx, 0);
             } else {
+                htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "gap found in response");
+                if (connp->out_state != htp_connp_RES_IDLE) {
+                    htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "response is not in idle state");
+                    if (connp->out_tx != NULL) {
+                        connp->out_tx->force_complete = 1;
+                        // this helps in transaction without requests
+                        connp->out_tx->request_progress = HTP_REQUEST_COMPLETE;
+                    }  
+                    rc = htp_tx_state_response_complete(connp->out_tx);
+                }
                 #ifdef HTP_DEBUG
                 fprintf(stderr, "htp_connp_res_data: GAP found in response, setting response state to IGNORE.");
                 #endif
+                connp->out_tx = NULL;
                 connp->out_state = htp_connp_RES_IGNORE;
                 rc = connp->out_state(connp);
             }

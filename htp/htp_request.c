@@ -1031,6 +1031,7 @@ htp_status_t htp_connp_REQ_IDLE(htp_connp_t * connp) {
     connp->in_tx = htp_connp_tx_create(connp);
     if (connp->in_tx == NULL) return HTP_ERROR;
 
+    connp->out_tx = connp->in_tx; // use this whenever request starts
     // Change state to TRANSACTION_START
     htp_tx_state_request_start(connp->in_tx);
 
@@ -1081,6 +1082,18 @@ int htp_connp_req_data(htp_connp_t *connp, const htp_time_t *timestamp, const vo
         htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "Missing inbound transaction data");
 
         return HTP_STREAM_ERROR;
+    }
+
+    if (connp->in_state == htp_connp_REQ_IDLE && connp->out_state != htp_connp_RES_IDLE) {
+        //complete the response state
+        htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "response is not in idle state. complete it");
+        if(connp->out_tx != NULL) {
+            connp->out_tx->force_complete = 1;
+        }
+        htp_tx_state_response_complete(connp->out_tx);
+        // after this out_tx should become NULL.. anyway force it 
+        connp->out_tx = NULL;
+        // htp_connp_REQ_IDLE handler will set it to in_tx(new transaction)
     }
 
     // If the length of the supplied data chunk is zero, proceed
@@ -1164,8 +1177,18 @@ int htp_connp_req_data(htp_connp_t *connp, const htp_time_t *timestamp, const vo
                 //simple version without probing
                 rc = htp_tx_state_request_complete(connp->in_tx);
             } else {
+                htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "gap found in request");
+                if (connp->in_state != htp_connp_REQ_IDLE) {
+                    htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "request is not in idle state");
+                    if(connp->in_tx != NULL) {
+                        connp->in_tx->force_complete = 1;
+                        //this helps in transaction without response
+                        connp->in_tx->response_progress = HTP_RESPONSE_COMPLETE;
+                    }
+                    //request will be made complete
+                    rc = htp_tx_state_request_complete(connp->in_tx);
+                }
                 htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "Gap found in request. Changing req and res state to IGNORE");
-                
                 connp->in_state = htp_connp_REQ_IGNORE;
                 connp->out_state = htp_connp_RES_IGNORE;
                 rc = connp->in_state(connp);

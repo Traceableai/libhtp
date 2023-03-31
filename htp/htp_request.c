@@ -843,6 +843,7 @@ htp_status_t htp_connp_REQ_LINE(htp_connp_t *connp) {
 }
 
 htp_status_t htp_connp_REQ_FINALIZE(htp_connp_t *connp) {
+    htp_log(connp, HTP_LOG_MARK, HTP_LOG_DEBUG, 0, "htp_connp_REQ_FINALIZE: connp->in_status: %d, connp->in_next_byte: %x", connp->in_status, connp->in_next_byte);
     if (connp->in_status != HTP_STREAM_CLOSED) {
         IN_PEEK_NEXT(connp);
         if (connp->in_next_byte == -1) {

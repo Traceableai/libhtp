@@ -200,6 +200,7 @@ htp_tx_t *htp_connp_tx_create(htp_connp_t *connp) {
     
     // Detect pipelining.
     if (htp_list_size(connp->conn->transactions) > connp->out_next_tx_index) {
+        htp_log(connp, HTP_LOG_MARK, HTP_LOG_DEBUG, 0, "DebugMM: Detected HTTP pipelined connection");
         connp->conn->flags |= HTP_CONN_PIPELINED;
     }
 

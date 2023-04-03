@@ -788,10 +788,10 @@ htp_status_t htp_connp_REQ_IGNORE_line(htp_connp_t *connp) {
     //     return HTP_ERROR;
     // }
 
-    #ifdef HTP_DEBUG
-    fprintf(stderr, "Ignoring request data htp_connp_IGNORE_REQ_line(connp->in_status %x)\n", connp->in_status);
-    fprint_raw_data(stderr, __func__, data, len);
-    #endif
+    // #ifdef HTP_DEBUG
+    // fprintf(stderr, "Ignoring request data htp_connp_IGNORE_REQ_line(connp->in_status %x)\n", connp->in_status);
+    // fprint_raw_data(stderr, __func__, data, len);
+    // #endif
     // if (len == 0) {
     //     htp_connp_req_clear_buffer(connp);
     //     return HTP_IGNORE;

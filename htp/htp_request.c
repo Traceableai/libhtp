@@ -39,6 +39,7 @@
 #include "htp_config_auto.h"
 
 #include "htp_private.h"
+#include "htp_threads.h"
 
 #define IN_TEST_NEXT_BYTE_OR_RETURN(X) \
 if ((X)->in_current_read_offset >= (X)->in_current_len) { \
@@ -1054,7 +1055,7 @@ size_t htp_connp_req_data_consumed(htp_connp_t *connp) {
 
 int htp_connp_req_data(htp_connp_t *connp, const htp_time_t *timestamp, const void *data, size_t len) {
     #ifdef HTP_DEBUG
-    fprintf(stderr, "htp_connp_req_data(connp->in_status %x)\n", connp->in_status);
+    fprintf(stderr, "[%lu] htp_connp_req_data(connp->in_status %x)\n", HTPGetThreadIdLong(), connp->in_status);
     fprint_raw_data(stderr, __func__, data, len);
     #endif
 

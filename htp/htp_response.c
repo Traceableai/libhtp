@@ -38,6 +38,7 @@
 
 #include "htp_config_auto.h"
 
+#include "htp_threads.h"
 #include "htp_private.h"
 
 #define OUT_TEST_NEXT_BYTE_OR_RETURN(X) \
@@ -1364,7 +1365,7 @@ htp_status_t htp_connp_RES_IDLE(htp_connp_t *connp) {
 
 int htp_connp_res_data(htp_connp_t *connp, const htp_time_t *timestamp, const void *data, size_t len) {
     #ifdef HTP_DEBUG
-    fprintf(stderr, "htp_connp_res_data(connp->out_status %x)\n", connp->out_status);
+    fprintf(stderr, "[%lu] htp_connp_res_data(connp->out_status %x)\n", HTPGetThreadIdLong(), connp->out_status);
     fprint_raw_data(stderr, __func__, data, len);
     #endif
 

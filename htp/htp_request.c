@@ -246,21 +246,9 @@ static htp_status_t htp_connp_req_buffer(htp_connp_t *connp) {
  * @return HTP_OK
  */
 static htp_status_t htp_connp_req_consolidate_data(htp_connp_t *connp, unsigned char **data, size_t *len) {
-    if (connp->in_buf == NULL) {
-        // We do not have any data buffered; point to the current data chunk.
-        *data = connp->in_current_data + connp->in_current_consume_offset;
-        *len = connp->in_current_read_offset - connp->in_current_consume_offset;
-    } else {
-        // We already have some data in the buffer. Add the data from the current
-        // chunk to it, and point to the consolidated buffer.
-        if (htp_connp_req_buffer(connp) != HTP_OK) {
-            return HTP_ERROR;
-        }
-
-        *data = connp->in_buf;
-        *len = connp->in_buf_size;
-    }
-
+    // We do not have any data buffered; point to the current data chunk.
+    *data = connp->in_current_data + connp->in_current_consume_offset;
+    *len = connp->in_current_read_offset - connp->in_current_consume_offset;
     return HTP_OK;
 }
 

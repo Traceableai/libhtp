@@ -999,7 +999,7 @@ int htp_connp_req_data(htp_connp_t *connp, const htp_time_t *timestamp, const vo
     if (connp->in_state == htp_connp_REQ_IDLE && connp->out_state != htp_connp_RES_IDLE) {
         //complete the response state
         htp_log(connp, HTP_LOG_MARK, HTP_LOG_ERROR, 0, "response is not in idle state.. complete it");
-        if(connp->out_tx != NULL && connp->out_tx->response_protocol_number >= HTP_PROTOCOL_1_1) {
+        if(connp->out_tx != NULL && connp->out_tx->response_protocol_number != HTP_PROTOCOL_1_0) {
             connp->out_tx->force_complete = 1;
         }
         htp_tx_state_response_complete(connp->out_tx);
